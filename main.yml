@@ -1,0 +1,30 @@
+---
+- hosts: servers
+  tasks:
+
+  - name: Check if golang rpm is installed
+    command: rpm -q golang
+    failed_when: rpm_check.rc > 1
+    register: rpm_check
+
+  - name: Download thyra bin if golang is not installed
+    shell: wget https://github.com/gothyra/thyra/releases/download/v0.0.1.alpha/thyra -P /usr/bin/
+    register: download_binary
+    when: rpm_check.rc == 1
+    become: yes
+
+  - name: Make executable thyra binary
+    file: 
+      path: /usr/bin/thyra 
+      mode: a+x
+    when: download_binary.rc == 0
+    when: rpm_check.rc == 1
+    become: yes
+
+  - name: Download gothyra
+    shell: go get github.com/gothyra/thyra
+    when: rpm_check.rc == 0
+
+  - name: Download gothyra source code and build it.
+    shell: cd $GOPATH/src/github.com/gothyra/thyra/ && go install
+    when: rpm_check.rc == 0
